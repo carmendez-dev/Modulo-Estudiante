@@ -12,6 +12,7 @@ from app.schemas.estudiante_schema import (
     EstudianteUpdate,
     EstudianteResponse
 )
+from app.schemas.estudiante_curso_schema import EstudianteConCursos
 
 # Crear router con prefijo y etiquetas
 router = APIRouter(
@@ -21,10 +22,10 @@ router = APIRouter(
 
 @router.get(
     "/",
-    response_model=List[EstudianteResponse],
+    response_model=List[EstudianteConCursos],
     status_code=status.HTTP_200_OK,
-    summary="Listar todos los estudiantes",
-    description="Obtiene una lista de todos los estudiantes registrados con paginación opcional"
+    summary="Listar todos los estudiantes con sus cursos",
+    description="Obtiene una lista de todos los estudiantes registrados con sus cursos asignados y paginación opcional"
 )
 def listar_estudiantes(
     skip: int = Query(0, ge=0, description="Número de registros a saltar"),
@@ -32,23 +33,23 @@ def listar_estudiantes(
     db: Session = Depends(get_db)
 ):
     """
-    Endpoint para listar todos los estudiantes
+    Endpoint para listar todos los estudiantes con sus cursos
     """
     return EstudianteController.obtener_todos(db, skip=skip, limit=limit)
 
 @router.get(
     "/{id_estudiante}",
-    response_model=EstudianteResponse,
+    response_model=EstudianteConCursos,
     status_code=status.HTTP_200_OK,
-    summary="Obtener estudiante por ID",
-    description="Obtiene la información detallada de un estudiante específico"
+    summary="Obtener estudiante por ID con sus cursos",
+    description="Obtiene la información detallada de un estudiante específico incluyendo los cursos asignados"
 )
 def obtener_estudiante(
     id_estudiante: int,
     db: Session = Depends(get_db)
 ):
     """
-    Endpoint para obtener un estudiante por su ID
+    Endpoint para obtener un estudiante por su ID con sus cursos
     """
     return EstudianteController.obtener_por_id(db, id_estudiante)
 

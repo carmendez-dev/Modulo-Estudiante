@@ -4,7 +4,7 @@ Configura la aplicación, middlewares y rutas
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.views import estudiante_view
+from app.views import estudiante_view, curso_view, estudiante_curso_view
 from app.config.database import engine, Base
 
 # Crear tablas en la base de datos (si no existen)
@@ -13,8 +13,8 @@ Base.metadata.create_all(bind=engine)
 # Crear instancia de FastAPI
 app = FastAPI(
     title="API Bienestar Estudiantil",
-    description="API REST para gestión de estudiantes con arquitectura MVC",
-    version="1.0.0",
+    description="API REST para gestión de estudiantes, cursos y asignaciones con arquitectura MVC",
+    version="1.2.0",
     docs_url="/docs",
     redoc_url="/redoc"
 )
@@ -30,6 +30,8 @@ app.add_middleware(
 
 # Incluir routers
 app.include_router(estudiante_view.router)
+app.include_router(curso_view.router)
+app.include_router(estudiante_curso_view.router)
 
 # Ruta raíz
 @app.get("/", tags=["Root"])
