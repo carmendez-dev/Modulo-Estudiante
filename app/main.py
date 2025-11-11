@@ -4,7 +4,7 @@ Configura la aplicación, middlewares y rutas
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.views import estudiante_view
+from app.views import estudiante_view, curso_view, inscripcion_view
 from app.config.database import engine, Base
 
 # Crear tablas en la base de datos (si no existen)
@@ -30,6 +30,8 @@ app.add_middleware(
 
 # Incluir routers
 app.include_router(estudiante_view.router)
+app.include_router(curso_view.router)
+app.include_router(inscripcion_view.router)
 
 # Ruta raíz
 @app.get("/", tags=["Root"])

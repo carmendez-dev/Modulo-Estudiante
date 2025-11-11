@@ -1,6 +1,10 @@
+from __future__ import annotations
 from pydantic import BaseModel, Field, validator
-from typing import Optional
+from typing import Optional, List, TYPE_CHECKING
 from datetime import date
+
+if TYPE_CHECKING:
+    from app.schemas.curso_schema import CursoResponseBase
 
 class EstudianteBase(BaseModel):
     ci: Optional[str] = Field(None, max_length=20, description="Cédula de identidad")
@@ -48,8 +52,23 @@ class EstudianteUpdate(BaseModel):
     apellido_materno_madre: Optional[str] = Field(None, max_length=50)
     telefono_madre: Optional[str] = Field(None, max_length=20)
 
-class EstudianteResponse(EstudianteBase):
+class EstudianteResponseBase(EstudianteBase):
+    """Schema base de respuesta sin cursos (para evitar ciclos)"""
     id_estudiante: int = Field(..., description="ID único del estudiante")
     
     class Config:
-        from_attributes = True  # Permite crear desde objetos ORM
+        from_attributes = True
+
+class EstudianteResponse(EstudianteResponseBase):
+    """Schema de respuesta completo con cursos"""
+    cursos: List['CursoResponseBase'] = []
+    
+    class Config:
+        from_attributes = True
+
+# Reconstruir los modelos para resolver referencias circulares
+from app.schemas.curso_schema import CursoResponseBase, CursoResponse
+
+EstudianteResponse.model_rebuild()
+CursoResponse.model_rebuild()
+

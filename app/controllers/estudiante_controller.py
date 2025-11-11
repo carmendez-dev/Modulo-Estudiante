@@ -69,16 +69,31 @@ class EstudianteController:
     
     @staticmethod
     def eliminar(db: Session, id_estudiante: int) -> dict:
-        # Buscar estudiante
+    # Buscar estudiante
         estudiante = EstudianteController.obtener_por_id(db, id_estudiante)
-        
+    
+        if not estudiante:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Estudiante con ID {id_estudiante} no encontrado"
+            )
+    
+        # Verificar si ya está eliminado (opcional, según tus necesidades)
+        if estudiante.estado_estudiante == False:  # O EstadoEstudiante.INACTIVO si usas enumerador
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Estudiante con ID {id_estudiante} ya está marcado como eliminado"
+            )
+    
         try:
-            db.delete(estudiante)
+            # Borrado lógico: cambiar solo el campo estado_estudiante
+            estudiante.estado_estudiante = False  # O EstadoEstudiante.INACTIVO
             db.commit()
-            return {"mensaje": f"Estudiante con ID {id_estudiante} eliminado exitosamente"}
+            db.refresh(estudiante)  # Refrescar para reflejar cambios
+            return {"mensaje": f"Estudiante con ID {id_estudiante} marcado como eliminado exitosamente"}
         except Exception as e:
             db.rollback()
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error al eliminar estudiante: {str(e)}"
+                detail=f"Error al realizar borrado lógico del estudiante: {str(e)}"
             )

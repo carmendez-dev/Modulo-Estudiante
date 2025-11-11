@@ -1,5 +1,14 @@
-from sqlalchemy import Column, Integer, String, Date
+from sqlalchemy import Column, Integer, String, Date, Table, ForeignKey
+from sqlalchemy.orm import relationship
 from app.config.database import Base
+
+# Tabla de asociación para la relación many-to-many entre Estudiantes y Cursos
+estudiantes_cursos = Table(
+    'estudiantes_cursos',
+    Base.metadata,
+    Column('id_estudiante', Integer, ForeignKey('estudiantes.id_estudiante'), primary_key=True),
+    Column('id_curso', Integer, ForeignKey('cursos.id_curso'), primary_key=True)
+)
 
 class Estudiante(Base):
     __tablename__ = "estudiantes"
@@ -24,6 +33,13 @@ class Estudiante(Base):
     apellido_paterno_madre = Column(String(50), nullable=True)
     apellido_materno_madre = Column(String(50), nullable=True)
     telefono_madre = Column(String(20), nullable=True)
+    
+    # Relación many-to-many con Curso
+    cursos = relationship(
+        "Curso",
+        secondary=estudiantes_cursos,
+        back_populates="estudiantes"
+    )
     
     def __repr__(self):
         return f"<Estudiante(id={self.id_estudiante}, nombres={self.nombres})>"

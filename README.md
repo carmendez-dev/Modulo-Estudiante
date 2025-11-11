@@ -33,7 +33,8 @@ CREATE TABLE `estudiantes` (
   `nombre_madre` varchar(50) DEFAULT NULL,
   `apellido_paterno_madre` varchar(50) DEFAULT NULL,
   `apellido_materno_madre` varchar(50) DEFAULT NULL,
-  `telefono_madre` varchar(20) DEFAULT NULL
+  `telefono_madre` varchar(20) DEFAULT NULL,
+  `estado_estudiante` BOOLEAN NOT NULL DEFAULT TRUE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 ```
 

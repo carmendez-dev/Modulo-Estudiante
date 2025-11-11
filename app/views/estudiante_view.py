@@ -20,7 +20,7 @@ router = APIRouter(
 )
 
 @router.get(
-    "/",
+    "/getAll",
     response_model=List[EstudianteResponse],
     status_code=status.HTTP_200_OK,
     summary="Listar todos los estudiantes",
@@ -37,7 +37,7 @@ def listar_estudiantes(
     return EstudianteController.obtener_todos(db, skip=skip, limit=limit)
 
 @router.get(
-    "/{id_estudiante}",
+    "/getById/{id_estudiante}",
     response_model=EstudianteResponse,
     status_code=status.HTTP_200_OK,
     summary="Obtener estudiante por ID",
@@ -53,7 +53,7 @@ def obtener_estudiante(
     return EstudianteController.obtener_por_id(db, id_estudiante)
 
 @router.post(
-    "/",
+    "/create",
     response_model=EstudianteResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Crear nuevo estudiante",
@@ -69,7 +69,7 @@ def crear_estudiante(
     return EstudianteController.crear(db, estudiante)
 
 @router.put(
-    "/{id_estudiante}",
+    "/update/{id_estudiante}",
     response_model=EstudianteResponse,
     status_code=status.HTTP_200_OK,
     summary="Actualizar estudiante",
@@ -86,7 +86,7 @@ def actualizar_estudiante(
     return EstudianteController.actualizar(db, id_estudiante, estudiante)
 
 @router.delete(
-    "/{id_estudiante}",
+    "/delete/{id_estudiante}",
     status_code=status.HTTP_200_OK,
     summary="Eliminar estudiante",
     description="Elimina un estudiante del sistema"
