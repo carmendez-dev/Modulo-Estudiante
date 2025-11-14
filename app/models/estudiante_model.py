@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, Table, ForeignKey
+from sqlalchemy import Column, Integer, String, Date, Table, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 from app.config.database import Base
 
@@ -21,6 +21,7 @@ class Estudiante(Base):
     apellido_materno = Column(String(50), nullable=False)
     fecha_nacimiento = Column(Date, nullable=True)
     direccion = Column(String(100), nullable=True)
+    estado_estudiante = Column(Enum('habilitado', 'inhabilitado', name='estado_estudiante_enum'), nullable=False, default='habilitado')
     
     # Información del padre
     nombre_padre = Column(String(50), nullable=True)
@@ -35,6 +36,7 @@ class Estudiante(Base):
     telefono_madre = Column(String(20), nullable=True)
     
     # Relación con cursos (muchos a muchos)
+    # Usa TYPE_CHECKING para evitar importación circular
     cursos = relationship(
         "Curso",
         secondary=estudiantes_cursos,

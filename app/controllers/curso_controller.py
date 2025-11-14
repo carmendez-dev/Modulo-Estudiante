@@ -165,3 +165,64 @@ class CursoController:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Error al eliminar curso: {str(e)}"
             )
+    
+    @staticmethod
+    def obtener_cursos_por_gestion(db: Session, gestion: str) -> List[dict]:
+        """
+        Obtener cursos simplificados de un año específico (solo nombre y nivel)
+        
+        Args:
+            db: Sesión de base de datos
+            gestion: Año o gestión a filtrar
+            
+        Returns:
+            Lista de diccionarios con id_curso, nombre_curso y nivel
+        """
+        cursos = db.query(Curso).filter(Curso.gestion == gestion).all()
+        
+        return [
+            {
+                "id_curso": curso.id_curso,
+                "nombre_curso": curso.nombre_curso,
+                "nivel": curso.nivel
+            }
+            for curso in cursos
+        ]
+    
+    @staticmethod
+    def crear_masivo(db: Session, cursos_data: List[CursoCreate]) -> dict:
+        """
+        Crear múltiples cursos de una vez
+        
+        Args:
+            db: Sesión de base de datos
+            cursos_data: Lista de datos de cursos a crear
+            
+        Returns:
+            Diccionario con mensaje, total creado y lista de cursos creados
+        """
+        cursos_creados = []
+        
+        try:
+            for curso_data in cursos_data:
+                nuevo_curso = Curso(**curso_data.model_dump())
+                db.add(nuevo_curso)
+                cursos_creados.append(nuevo_curso)
+            
+            db.commit()
+            
+            # Refrescar todos los cursos creados para obtener sus IDs
+            for curso in cursos_creados:
+                db.refresh(curso)
+            
+            return {
+                "mensaje": f"Se crearon {len(cursos_creados)} cursos exitosamente",
+                "total_creados": len(cursos_creados),
+                "cursos_creados": cursos_creados
+            }
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error al crear cursos masivamente: {str(e)}"
+            )

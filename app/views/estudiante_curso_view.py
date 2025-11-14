@@ -4,13 +4,16 @@ Define las rutas HTTP para gestionar las relaciones
 """
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
+from typing import List
 from app.config.database import get_db
 from app.controllers.estudiante_curso_controller import EstudianteCursoController
 from app.schemas.estudiante_curso_schema import (
     AsignarEstudianteCurso,
     AsignacionResponse,
     CursoConEstudiantes,
-    EstudianteConCursos
+    EstudianteConCursos,
+    AsignarEstudiantesCursoMasivo,
+    AsignacionMasivaResponse
 )
 
 # Crear router con prefijo y etiquetas
@@ -90,3 +93,39 @@ def obtener_cursos_de_estudiante(
     Endpoint para obtener todos los cursos de un estudiante
     """
     return EstudianteCursoController.obtener_cursos_de_estudiante(db, id_estudiante)
+
+@router.get(
+    "/curso/{id_curso}/estudiantes-habilitados",
+    response_model=List[dict],
+    status_code=status.HTTP_200_OK,
+    summary="Obtener estudiantes habilitados de un curso",
+    description="Obtiene solo los estudiantes con estado 'habilitado' de un curso específico (id_estudiante y nombre_completo)"
+)
+def obtener_estudiantes_habilitados_de_curso(
+    id_curso: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Endpoint para obtener estudiantes habilitados de un curso
+    """
+    return EstudianteCursoController.obtener_estudiantes_habilitados_de_curso(db, id_curso)
+
+@router.post(
+    "/masivo",
+    response_model=AsignacionMasivaResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Asignar múltiples estudiantes a un curso",
+    description="Asigna una lista de estudiantes a un curso específico de una sola vez"
+)
+def asignar_estudiantes_masivo(
+    asignacion: AsignarEstudiantesCursoMasivo,
+    db: Session = Depends(get_db)
+):
+    """
+    Endpoint para asignar múltiples estudiantes a un curso
+    """
+    return EstudianteCursoController.asignar_estudiantes_masivo(
+        db, 
+        asignacion.id_curso, 
+        asignacion.ids_estudiantes
+    )
