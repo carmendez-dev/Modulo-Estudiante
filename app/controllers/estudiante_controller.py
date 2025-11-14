@@ -72,13 +72,19 @@ class EstudianteController:
         # Buscar estudiante
         estudiante = EstudianteController.obtener_por_id(db, id_estudiante)
         
+        # Eliminación lógica: cambiar estado a inhabilitado
         try:
-            db.delete(estudiante)
+            estudiante.estado_estudiante = 'inhabilitado'
             db.commit()
-            return {"mensaje": f"Estudiante con ID {id_estudiante} eliminado exitosamente"}
+            db.refresh(estudiante)
+            return {
+                "mensaje": f"Estudiante con ID {id_estudiante} inhabilitado exitosamente",
+                "id_estudiante": id_estudiante,
+                "estado": "inhabilitado"
+            }
         except Exception as e:
             db.rollback()
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error al eliminar estudiante: {str(e)}"
+                detail=f"Error al inhabilitar estudiante: {str(e)}"
             )
