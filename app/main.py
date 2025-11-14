@@ -4,6 +4,7 @@ Configura la aplicación, middlewares y rutas
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.models import Estudiante, Curso  # Importar modelos primero
 from app.views import estudiante_view, curso_view, estudiante_curso_view
 from app.config.database import engine, Base
 

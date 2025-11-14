@@ -24,6 +24,7 @@ class EstudianteSimple(BaseModel):
     nombres: str
     apellido_paterno: str
     apellido_materno: str
+    estado_estudiante: Optional[str] = 'habilitado'
     
     class Config:
         from_attributes = True
@@ -45,6 +46,7 @@ class EstudianteConCursos(BaseModel):
     apellido_paterno_madre: Optional[str] = None
     apellido_materno_madre: Optional[str] = None
     telefono_madre: Optional[str] = None
+    estado_estudiante: Optional[str] = 'habilitado'
     cursos: List[CursoSimple] = []
     
     class Config:
@@ -71,3 +73,18 @@ class AsignacionResponse(BaseModel):
     mensaje: str
     id_estudiante: int
     id_curso: int
+
+# Schema para asignación masiva de estudiantes a un curso
+class AsignarEstudiantesCursoMasivo(BaseModel):
+    """Schema para asignar múltiples estudiantes a un curso"""
+    id_curso: int = Field(..., description="ID del curso")
+    ids_estudiantes: List[int] = Field(..., description="Lista de IDs de estudiantes")
+
+# Schema de respuesta para asignación masiva
+class AsignacionMasivaResponse(BaseModel):
+    """Schema de respuesta para asignaciones masivas"""
+    mensaje: str
+    id_curso: int
+    total_asignados: int
+    estudiantes_asignados: List[int]
+    errores: List[str] = []

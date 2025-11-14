@@ -184,3 +184,100 @@ class EstudianteCursoController:
             )
         
         return estudiante
+
+    @staticmethod
+    def obtener_estudiantes_habilitados_de_curso(db: Session, id_curso: int) -> List[dict]:
+        """
+        Obtener estudiantes habilitados de un curso específico
+        
+        Args:
+            db: Sesión de base de datos
+            id_curso: ID del curso
+            
+        Returns:
+            Lista de diccionarios con id_estudiante y nombre_completo de estudiantes habilitados
+            
+        Raises:
+            HTTPException: Si el curso no existe
+        """
+        curso = db.query(Curso).filter(Curso.id_curso == id_curso).first()
+        
+        if not curso:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Curso con ID {id_curso} no encontrado"
+            )
+        
+        # Filtrar solo estudiantes habilitados
+        estudiantes_habilitados = [
+            {
+                "id_estudiante": est.id_estudiante,
+                "nombre_completo": f"{est.nombres} {est.apellido_paterno} {est.apellido_materno}",
+                "estado_estudiante": est.estado_estudiante
+            }
+            for est in curso.estudiantes
+            if est.estado_estudiante == 'habilitado'
+        ]
+        
+        return estudiantes_habilitados
+    
+    @staticmethod
+    def asignar_estudiantes_masivo(db: Session, id_curso: int, ids_estudiantes: List[int]) -> dict:
+        """
+        Asignar múltiples estudiantes a un curso de una vez
+        
+        Args:
+            db: Sesión de base de datos
+            id_curso: ID del curso
+            ids_estudiantes: Lista de IDs de estudiantes
+            
+        Returns:
+            Diccionario con mensaje, total asignado y lista de IDs asignados
+        """
+        # Verificar que el curso existe
+        curso = db.query(Curso).filter(Curso.id_curso == id_curso).first()
+        
+        if not curso:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Curso con ID {id_curso} no encontrado"
+            )
+        
+        estudiantes_asignados = []
+        errores = []
+        
+        try:
+            for id_estudiante in ids_estudiantes:
+                # Verificar que el estudiante existe
+                estudiante = db.query(Estudiante).filter(
+                    Estudiante.id_estudiante == id_estudiante
+                ).first()
+                
+                if not estudiante:
+                    errores.append(f"Estudiante con ID {id_estudiante} no encontrado")
+                    continue
+                
+                # Verificar si ya está asignado
+                if curso in estudiante.cursos:
+                    errores.append(f"Estudiante con ID {id_estudiante} ya está asignado al curso")
+                    continue
+                
+                # Asignar estudiante al curso
+                estudiante.cursos.append(curso)
+                estudiantes_asignados.append(id_estudiante)
+            
+            db.commit()
+            
+            return {
+                "mensaje": f"Se asignaron {len(estudiantes_asignados)} estudiantes al curso {curso.nombre_curso}",
+                "id_curso": id_curso,
+                "total_asignados": len(estudiantes_asignados),
+                "estudiantes_asignados": estudiantes_asignados,
+                "errores": errores
+            }
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error al asignar estudiantes masivamente: {str(e)}"
+            )

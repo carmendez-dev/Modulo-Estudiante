@@ -3,14 +3,14 @@ Esquemas Pydantic para validación de datos de cursos
 Define la estructura de entrada y salida de datos en la API
 """
 from pydantic import BaseModel, Field, validator
-from typing import Optional, Literal
+from typing import Optional, Literal, List
 
 class CursoBase(BaseModel):
     """
     Esquema base con campos comunes de curso
     """
     nombre_curso: str = Field(..., min_length=1, max_length=50, description="Nombre del curso")
-    nivel: Literal['inicial', 'primaria', 'secundaria'] = Field(..., description="Nivel educativo")
+    nivel: Literal['INICIAL', 'PRIMARIA', 'SECUNDARIA'] = Field(..., description="Nivel educativo")
     gestion: str = Field(..., min_length=1, max_length=20, description="Gestión o año académico")
     
     @validator('nombre_curso', 'gestion')
@@ -40,7 +40,7 @@ class CursoUpdate(BaseModel):
     Todos los campos son opcionales
     """
     nombre_curso: Optional[str] = Field(None, min_length=1, max_length=50)
-    nivel: Optional[Literal['inicial', 'primaria', 'secundaria']] = None
+    nivel: Optional[Literal['INICIAL', 'PRIMARIA', 'SECUNDARIA']] = None
     gestion: Optional[str] = Field(None, min_length=1, max_length=20)
     
     @validator('nombre_curso', 'gestion')
@@ -58,3 +58,31 @@ class CursoResponse(CursoBase):
     
     class Config:
         from_attributes = True  # Permite crear desde objetos ORM
+
+# Esquema simplificado para exportar cursos (solo nombre y nivel)
+class CursoSimple(BaseModel):
+    """
+    Esquema simplificado para listar cursos de un año específico
+    """
+    id_curso: int = Field(..., description="ID único del curso")
+    nombre_curso: str = Field(..., description="Nombre del curso")
+    nivel: Literal['INICIAL', 'PRIMARIA', 'SECUNDARIA'] = Field(..., description="Nivel educativo")
+    
+    class Config:
+        from_attributes = True
+
+# Esquema para crear múltiples cursos
+class CursosCreateBulk(BaseModel):
+    """
+    Esquema para crear múltiples cursos de una vez
+    """
+    cursos: List[CursoCreate] = Field(..., description="Lista de cursos a crear")
+
+# Esquema de respuesta para creación masiva
+class CursosCreateBulkResponse(BaseModel):
+    """
+    Respuesta para creación masiva de cursos
+    """
+    mensaje: str = Field(..., description="Mensaje de confirmación")
+    total_creados: int = Field(..., description="Total de cursos creados")
+    cursos_creados: List[CursoResponse] = Field(..., description="Lista de cursos creados")

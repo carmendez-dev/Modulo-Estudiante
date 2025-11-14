@@ -11,7 +11,10 @@ from app.controllers.curso_controller import CursoController
 from app.schemas.curso_schema import (
     CursoCreate,
     CursoUpdate,
-    CursoResponse
+    CursoResponse,
+    CursoSimple,
+    CursosCreateBulk,
+    CursosCreateBulkResponse
 )
 from app.schemas.estudiante_curso_schema import CursoConEstudiantes
 
@@ -31,7 +34,7 @@ router = APIRouter(
 def listar_cursos(
     skip: int = Query(0, ge=0, description="Número de registros a saltar"),
     limit: int = Query(100, ge=1, le=1000, description="Número máximo de registros"),
-    nivel: Optional[str] = Query(None, description="Filtrar por nivel (inicial, primaria, secundaria)"),
+    nivel: Optional[str] = Query(None, description="Filtrar por nivel (INICIAL, PRIMARIA, SECUNDARIA)"),
     gestion: Optional[str] = Query(None, description="Filtrar por gestión. Por defecto: año actual. Usa 'all' para ver todos"),
     db: Session = Depends(get_db)
 ):
@@ -111,3 +114,35 @@ def eliminar_curso(
     Endpoint para eliminar un curso
     """
     return CursoController.eliminar(db, id_curso)
+
+@router.get(
+    "/gestion/{gestion}",
+    response_model=List[CursoSimple],
+    status_code=status.HTTP_200_OK,
+    summary="Obtener cursos de un año específico",
+    description="Obtiene solo nombre y nivel de todos los cursos de una gestión específica (ejemplo: 2024)"
+)
+def obtener_cursos_por_gestion(
+    gestion: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Endpoint para obtener cursos simplificados de un año específico
+    """
+    return CursoController.obtener_cursos_por_gestion(db, gestion)
+
+@router.post(
+    "/masivo",
+    response_model=CursosCreateBulkResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Crear múltiples cursos",
+    description="Crea múltiples cursos de una sola vez recibiendo una lista de cursos"
+)
+def crear_cursos_masivo(
+    cursos_bulk: CursosCreateBulk,
+    db: Session = Depends(get_db)
+):
+    """
+    Endpoint para crear múltiples cursos a la vez
+    """
+    return CursoController.crear_masivo(db, cursos_bulk.cursos)
