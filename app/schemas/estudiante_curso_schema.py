@@ -24,6 +24,7 @@ class EstudianteSimple(BaseModel):
     nombres: str
     apellido_paterno: str
     apellido_materno: str
+    estado_estudiante: str = 'Activo'
     
     class Config:
         from_attributes = True
@@ -37,6 +38,7 @@ class EstudianteConCursos(BaseModel):
     apellido_materno: str
     fecha_nacimiento: Optional[date] = None
     direccion: Optional[str] = None
+    estado_estudiante: str = 'Activo'
     nombre_padre: Optional[str] = None
     apellido_paterno_padre: Optional[str] = None
     apellido_materno_padre: Optional[str] = None
@@ -71,3 +73,27 @@ class AsignacionResponse(BaseModel):
     mensaje: str
     id_estudiante: int
     id_curso: int
+
+
+class EstudianteConCursosGestion(BaseModel):
+    """Schema de estudiante con cursos filtrados por gestión"""
+    id_estudiante: int
+    ci: Optional[str] = None
+    nombres: str
+    apellido_paterno: str
+    apellido_materno: str
+    fecha_nacimiento: Optional[date] = None
+    direccion: Optional[str] = None
+    estado_estudiante: str = 'Activo'
+    nombre_padre: Optional[str] = None
+    apellido_paterno_padre: Optional[str] = None
+    apellido_materno_padre: Optional[str] = None
+    telefono_padre: Optional[str] = None
+    nombre_madre: Optional[str] = None
+    apellido_paterno_madre: Optional[str] = None
+    apellido_materno_madre: Optional[str] = None
+    telefono_madre: Optional[str] = None
+    cursos: List[CursoSimple] = []
+    
+    class Config:
+        from_attributes = True

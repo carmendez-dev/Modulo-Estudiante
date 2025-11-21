@@ -58,3 +58,26 @@ class CursoResponse(CursoBase):
     
     class Config:
         from_attributes = True  # Permite crear desde objetos ORM
+
+class CopiarCursosRequest(BaseModel):
+    """
+    Esquema para copiar cursos de una gestión a otra
+    """
+    gestion_origen: str = Field(..., min_length=1, max_length=20, description="Gestión de origen (ej: 2025)")
+    gestion_destino: str = Field(..., min_length=1, max_length=20, description="Gestión de destino (ej: 2026)")
+    
+    @validator('gestion_origen', 'gestion_destino')
+    def validar_gestion(cls, v):
+        """Validar que las gestiones no estén vacías"""
+        if v and not v.strip():
+            raise ValueError('La gestión no puede estar vacía')
+        return v.strip()
+
+class CopiarCursosResponse(BaseModel):
+    """
+    Esquema de respuesta para la copia de cursos
+    """
+    mensaje: str = Field(..., description="Mensaje de confirmación")
+    cursos_copiados: int = Field(..., description="Cantidad de cursos copiados")
+    gestion_origen: str = Field(..., description="Gestión de origen")
+    gestion_destino: str = Field(..., description="Gestión de destino")

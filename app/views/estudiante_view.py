@@ -10,9 +10,13 @@ from app.controllers.estudiante_controller import EstudianteController
 from app.schemas.estudiante_schema import (
     EstudianteCreate,
     EstudianteUpdate,
-    EstudianteResponse
+    EstudianteResponse,
+    CambiarEstadoEstudiante,
+    CambiarEstadoResponse
 )
-from app.schemas.estudiante_curso_schema import EstudianteConCursos
+from app.schemas.estudiante_curso_schema import EstudianteConCursos, EstudianteConCursosGestion
+from typing import Optional
+from datetime import datetime
 
 # Crear router con prefijo y etiquetas
 router = APIRouter(
@@ -36,6 +40,38 @@ def listar_estudiantes(
     Endpoint para listar todos los estudiantes con sus cursos
     """
     return EstudianteController.obtener_todos(db, skip=skip, limit=limit)
+
+@router.get(
+    "/por-gestion",
+    status_code=status.HTTP_200_OK,
+    summary="Listar estudiantes por gestión",
+    description="Obtiene estudiantes filtrados por gestión (año académico), mostrando SOLO los cursos de esa gestión. Por defecto usa el año actual."
+)
+def listar_estudiantes_por_gestion(
+    gestion: Optional[str] = Query(None, description="Gestión a filtrar. Por defecto: año actual"),
+    nivel: Optional[str] = Query(None, description="Filtrar por nivel (inicial, primaria, secundaria)"),
+    id_curso: Optional[int] = Query(None, description="Filtrar por ID de curso específico"),
+    skip: int = Query(0, ge=0, description="Número de registros a saltar"),
+    limit: int = Query(100, ge=1, le=1000, description="Número máximo de registros"),
+    db: Session = Depends(get_db)
+):
+    """
+    Endpoint para listar estudiantes filtrados por gestión.
+    Por defecto filtra por el año actual.
+    Los cursos mostrados corresponden SOLO a la gestión especificada.
+    """
+    # Si no se especifica gestión, usar el año actual
+    if gestion is None:
+        gestion = str(datetime.now().year)
+    
+    return EstudianteController.obtener_por_gestion(
+        db, 
+        gestion=gestion,
+        nivel=nivel,
+        id_curso=id_curso,
+        skip=skip,
+        limit=limit
+    )
 
 @router.get(
     "/{id_estudiante}",
@@ -100,3 +136,49 @@ def eliminar_estudiante(
     Endpoint para eliminar un estudiante
     """
     return EstudianteController.eliminar(db, id_estudiante)
+
+@router.patch(
+    "/{id_estudiante}/estado",
+    response_model=CambiarEstadoResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Cambiar estado del estudiante",
+    description="Cambia el estado de un estudiante (Activo, Abandono, Retirado)"
+)
+def cambiar_estado_estudiante(
+    id_estudiante: int,
+    estado_data: CambiarEstadoEstudiante,
+    db: Session = Depends(get_db)
+):
+    """
+    Endpoint para cambiar el estado de un estudiante.
+    Estados válidos: Activo, Abandono, Retirado
+    """
+    return EstudianteController.cambiar_estado(
+        db, 
+        id_estudiante, 
+        estado_data.estado_estudiante
+    )
+
+@router.get(
+    "/por-estado/{estado}",
+    response_model=List[EstudianteConCursos],
+    status_code=status.HTTP_200_OK,
+    summary="Listar estudiantes por estado",
+    description="Obtiene estudiantes filtrados por estado (Activo, Retirado, Abandono)"
+)
+def listar_estudiantes_por_estado(
+    estado: str,
+    skip: int = Query(0, ge=0, description="Número de registros a saltar"),
+    limit: int = Query(100, ge=1, le=1000, description="Número máximo de registros"),
+    db: Session = Depends(get_db)
+):
+    """
+    Endpoint para listar estudiantes filtrados por estado.
+    Estados válidos: Activo, Retirado, Abandono
+    """
+    return EstudianteController.obtener_por_estado(
+        db,
+        estado=estado,
+        skip=skip,
+        limit=limit
+    )

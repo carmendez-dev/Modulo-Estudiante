@@ -11,7 +11,9 @@ from app.controllers.curso_controller import CursoController
 from app.schemas.curso_schema import (
     CursoCreate,
     CursoUpdate,
-    CursoResponse
+    CursoResponse,
+    CopiarCursosRequest,
+    CopiarCursosResponse
 )
 from app.schemas.estudiante_curso_schema import CursoConEstudiantes
 
@@ -47,6 +49,42 @@ def listar_cursos(
         gestion = None
     
     return CursoController.obtener_todos(db, skip=skip, limit=limit, nivel=nivel, gestion=gestion)
+
+@router.get(
+    "/por-gestion-nivel",
+    response_model=List[CursoConEstudiantes],
+    status_code=status.HTTP_200_OK,
+    summary="Listar cursos por gestión y nivel",
+    description="Endpoint específico para obtener cursos filtrados por gestión y opcionalmente por nivel. Por defecto usa el año actual."
+)
+def listar_cursos_por_gestion_nivel(
+    gestion: Optional[str] = Query(None, description="Gestión a filtrar. Por defecto: año actual"),
+    nivel: Optional[str] = Query(None, description="Filtrar por nivel (inicial, primaria, secundaria)"),
+    skip: int = Query(0, ge=0, description="Número de registros a saltar"),
+    limit: int = Query(100, ge=1, le=1000, description="Número máximo de registros"),
+    db: Session = Depends(get_db)
+):
+    """
+    Endpoint para listar cursos filtrados por gestión y nivel.
+    Por defecto filtra por el año actual.
+    
+    Ejemplos:
+    - /api/cursos/por-gestion-nivel → Cursos del año actual
+    - /api/cursos/por-gestion-nivel?gestion=2025 → Cursos de 2025
+    - /api/cursos/por-gestion-nivel?gestion=2025&nivel=primaria → Cursos de primaria 2025
+    - /api/cursos/por-gestion-nivel?nivel=secundaria → Cursos de secundaria del año actual
+    """
+    # Si no se especifica gestión, usar el año actual
+    if gestion is None:
+        gestion = str(datetime.now().year)
+    
+    return CursoController.obtener_todos(
+        db, 
+        skip=skip, 
+        limit=limit, 
+        nivel=nivel, 
+        gestion=gestion
+    )
 
 @router.get(
     "/{id_curso}",
@@ -111,3 +149,34 @@ def eliminar_curso(
     Endpoint para eliminar un curso
     """
     return CursoController.eliminar(db, id_curso)
+
+@router.post(
+    "/copiar-gestion",
+    response_model=CopiarCursosResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Copiar cursos de una gestión a otra",
+    description="Copia todos los cursos de una gestión origen a una gestión destino. No copia los estudiantes asignados, solo la estructura de cursos."
+)
+def copiar_cursos_gestion(
+    request: CopiarCursosRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Endpoint para copiar todos los cursos de una gestión a otra.
+    
+    Ejemplo de uso:
+    ```json
+    {
+        "gestion_origen": "2025",
+        "gestion_destino": "2026"
+    }
+    ```
+    
+    Nota: Solo copia la estructura de cursos (nombre, nivel, gestión).
+    No copia las asignaciones de estudiantes.
+    """
+    return CursoController.copiar_cursos_gestion(
+        db, 
+        request.gestion_origen, 
+        request.gestion_destino
+    )

@@ -7,6 +7,7 @@ from fastapi import HTTPException, status
 from app.models.curso_model import Curso
 from app.schemas.curso_schema import CursoCreate, CursoUpdate
 from typing import List, Optional
+from sqlalchemy import text
 
 class CursoController:
     """
@@ -164,4 +165,84 @@ class CursoController:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Error al eliminar curso: {str(e)}"
+            )
+    
+    @staticmethod
+    def copiar_cursos_gestion(
+        db: Session, 
+        gestion_origen: str, 
+        gestion_destino: str
+    ) -> dict:
+        """
+        Copiar todos los cursos de una gestión a otra
+        
+        Args:
+            db: Sesión de base de datos
+            gestion_origen: Gestión de origen (ej: 2025)
+            gestion_destino: Gestión de destino (ej: 2026)
+            
+        Returns:
+            Diccionario con información de la operación
+            
+        Raises:
+            HTTPException: Si hay errores en la operación
+        """
+        try:
+            # Verificar que existan cursos en la gestión origen
+            cursos_origen = db.query(Curso).filter(
+                Curso.gestion == gestion_origen
+            ).all()
+            
+            if not cursos_origen:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"No se encontraron cursos en la gestión {gestion_origen}"
+                )
+            
+            # Verificar si ya existen cursos en la gestión destino
+            cursos_destino_existentes = db.query(Curso).filter(
+                Curso.gestion == gestion_destino
+            ).count()
+            
+            if cursos_destino_existentes > 0:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Ya existen {cursos_destino_existentes} cursos en la gestión {gestion_destino}. Elimínelos primero si desea reemplazarlos."
+                )
+            
+            # Copiar cursos usando SQL directo para mejor rendimiento
+            sql = text("""
+                INSERT INTO cursos (nombre_curso, nivel, gestion)
+                SELECT nombre_curso, nivel, :gestion_destino
+                FROM cursos 
+                WHERE gestion = :gestion_origen
+            """)
+            
+            result = db.execute(
+                sql, 
+                {
+                    "gestion_origen": gestion_origen,
+                    "gestion_destino": gestion_destino
+                }
+            )
+            
+            db.commit()
+            
+            cursos_copiados = result.rowcount
+            
+            return {
+                "mensaje": f"Cursos copiados exitosamente de {gestion_origen} a {gestion_destino}",
+                "cursos_copiados": cursos_copiados,
+                "gestion_origen": gestion_origen,
+                "gestion_destino": gestion_destino
+            }
+            
+        except HTTPException:
+            db.rollback()
+            raise
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error al copiar cursos: {str(e)}"
             )
